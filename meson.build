@@ -1,47 +1,40 @@
 project(
-  'linux-stl-containers',
+  'insl',
   'c',
   version: '0.1',
-  default_options: ['warning_level=3', 'c_std=gnu11'],
+  default_options: ['warning_level=3', 'c_std=gnu23'],
 )
 
 # These arguments are only used to build the shared library
 # not the executables that use the library.
-lib_args = ['-DBUILDING_LINUX_STL_CONTAINERS']
+lib_args = ['-DBUILDING_INSL']
 
-linux_stl_containers_inc = include_directories('include')
-linux_stl_containers_src = ['src/list_head.c']
-linux_stl_containers = shared_library(
-  'linux_stl_containers',
-  sources: linux_stl_containers_src,
+insl_inc = include_directories('include')
+insl_src = ['src/list_head.c', 'src/hlist_head.c']
+insl_shared = shared_library(
+  'insl',
+  sources: insl_src,
   install: true,
   c_args: lib_args,
   gnu_symbol_visibility: 'hidden',
-  include_directories: linux_stl_containers_inc,
+  include_directories: insl_inc,
 )
 
-# Make this library usable as a Meson subproject.
-linux_stl_containers_dep = declare_dependency(
-  include_directories: linux_stl_containers_inc,
-  link_with: linux_stl_containers,
+insl_dep = declare_dependency(
+  include_directories: insl_inc,
+  link_with: insl_shared,
 )
 
-# Make this library usable from the system's
-# package manager.
-install_subdir(
-  'include',
-  install_dir: 'include/linux_stl_containers',
-  strip_directory: true,
-)
+install_subdir('include/insl', install_dir: 'include')
 
 subdir('tests')
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(
-  name: 'linux-stl-containers',
-  filebase: 'linux_stl_containers',
-  description: 'Implementation of stl containers from linux-2.6.24',
-  subdirs: 'linux_stl_containers',
-  libraries: linux_stl_containers,
+  name: 'insl',
+  filebase: 'insl',
+  description: 'Some data structures implemented out of kernel tree',
+  subdirs: 'insl',
+  libraries: insl_shared,
   version: '0.1',
 )

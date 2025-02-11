@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stddef.h>
+
 #define container_of(ptr, type, member)                                        \
   ({                                                                           \
     const typeof(((type*)0)->member)* __mptr = (ptr);                          \
@@ -7,15 +9,15 @@
   })
 
 #if defined _WIN32 || defined __CYGWIN__
-#ifdef BUILDING_LINUX_STL_CONTAINERS
-#define LINUX_STL_CONTAINERS_PUBLIC __declspec(dllexport)
+#ifdef BUILDING_INSL
+#define INSL_PUBLIC __declspec(dllexport)
 #else
-#define LINUX_STL_CONTAINERS_PUBLIC __declspec(dllimport)
+#define INSL_PUBLIC __declspec(dllimport)
 #endif
 #else
-#ifdef BUILDING_LINUX_STL_CONTAINERS
-#define LINUX_STL_CONTAINERS_PUBLIC __attribute__((visibility("default")))
+#ifdef BUILDING_INSL
+#define INSL_PUBLIC __attribute__((visibility("default")))
 #else
-#define LINUX_STL_CONTAINERS_PUBLIC
+#define INSL_PUBLIC
 #endif
 #endif

@@ -1,52 +1,71 @@
 {
-  description = "CMake hello world example";
+  description = "Some data structures implemented out of kernel tree";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
+
+    nixcode = {
+      url = "github:Dessera/nixcode";
+      inputs.flake-parts.follows = "flake-parts";
+    };
+  };
+
+  nixConfig = {
+    extra-substituters = [
+      "https://nixcode.cachix.org"
+    ];
+
+    extra-trusted-public-keys = [
+      "nixcode.cachix.org-1:6FvhF+vlN7gCzQ10JIKVldbG59VfYVzxhH/+KGHvMhw="
+    ];
   };
 
   outputs =
-    inputs@{
-      self,
-      nixpkgs,
-      flake-parts,
-    }:
-    flake-parts.lib.mkFlake { inherit inputs; } {
-      systems = [ "x86_64-linux" ];
+    { flake-parts, ... }@inputs:
+    flake-parts.lib.mkFlake { inherit inputs; } (
+      { withSystem, ... }:
+      {
+        systems = [ "x86_64-linux" ];
 
-      perSystem =
-        { pkgs, ... }:
-        let
-          stdenv' = pkgs.gcc14Stdenv;
-        in
-        {
-          # packages = {
-          #   hello = pkgs.callPackage ./default.nix {
-          #     stdenv = stdenv';
-          #   };
-          #   default = self'.packages.hello;
-          # };
+        perSystem =
+          {
+            self',
+            pkgs,
+            system,
+            ...
+          }:
+          let
+            stdenv = pkgs.gcc14Stdenv;
 
-          devShells.default =
-            pkgs.mkShell.override
-              {
-                stdenv = stdenv';
-              }
-              {
-                # inputsFrom = [ self'.packages.default ];
-                packages = with pkgs; [
-                  nixd
-                  nixfmt-rfc-style
-                  clang-tools
+            clang-tools = pkgs.callPackage ./.nix-support/clang-tools.nix {
+              inherit stdenv;
+            };
 
-                  meson
-                  ninja
-                  mesonlsp
+            code = withSystem system ({ inputs', ... }: inputs'.nixcode.packages.nixcode-cpp);
+          in
+          {
+            packages.default = pkgs.callPackage ./default.nix { inherit stdenv; };
+            devShells.default =
+              pkgs.mkShell.override
+                {
+                  inherit stdenv;
+                }
+                {
+                  inputsFrom = [ self'.packages.default ];
 
-                  pkg-config
-                ];
-              };
-        };
-    };
+                  packages =
+                    (with pkgs; [
+                      nixd
+                      nixfmt-rfc-style
+                      mesonlsp
+                    ])
+                    ++ [
+                      clang-tools
+                      code
+                    ];
+                };
+          };
+      }
+    );
 }
